@@ -54,8 +54,9 @@ class VisitGenerator(offset: Int = 1) extends Actor {
     import com.fortysevendeg.scalacheck.datetime.instances.jdk8._
     import com.fortysevendeg.scalacheck.datetime.jdk8.granularity.seconds
 
-    val from = ZonedDateTime.now().minusYears(1)
-    val to = Duration.ofDays(365)
+    val from = ZonedDateTime.now().minusMinutes(5)
+    //    val from = ZonedDateTime.of(2015, 3, 24, 0, 0, 0, 0, ZoneOffset.UTC)
+    val to = Duration.ofMinutes(5)
 
     val generator: Gen[ZonedDateTime] = genDateTimeWithinRange(from, to)
     generator.sample.map(zdt => zdt.withZoneSameInstant(ZoneOffset.UTC))

@@ -3,11 +3,9 @@ package com.spotx.hack.kafka.producer
 import akka.actor.{Actor, ActorSystem, Props}
 import com.spotx.hack.kafka.producer.domain.Visit
 
-sealed trait Action
-
-case object Start extends Action
-
 case class GenerateVisitors(visitors: Int)
+
+case class JsonVisitor(value: String)
 
 class VisitPrinter extends Actor {
 
@@ -15,30 +13,19 @@ class VisitPrinter extends Actor {
   import io.circe.syntax._
 
   def receive = {
-    case v: Visit => println(s"Some data: ${v.asJson.noSpaces}")
+    case v: Visit => sender ! (v, JsonVisitor(s"${v.asJson.noSpaces}"))
   }
 
 }
-
-class VisitKafkaProducer extends Actor {
-
-  def receive = {
-
-    case GenerateVisitors(x) => {
-
-    }
-
-  }
-}
-
 
 object Producer extends App {
 
-
   val system = ActorSystem("Producer")
   val visitPrinter = system.actorOf(Props[VisitPrinter], "visitPrinter")
-  val visitGenerator = system.actorOf(VisitGenerator.offset(10), "visitGenerator")
-  val coordinator = system.actorOf(Coordinator.start(visitGenerator, visitPrinter), "coordinator")
+  val visitGenerator = system.actorOf(VisitGenerator.offset(1000), "visitGenerator")
+  val visitKafkaProducer = system.actorOf(Props[KafkaVisitProducer], "kafkaProducer")
+  val coordinator = system.
+    actorOf(Coordinator.start(visitGenerator, visitPrinter, visitKafkaProducer), "coordinator")
 
   coordinator ! GenerateVisitors(10)
 

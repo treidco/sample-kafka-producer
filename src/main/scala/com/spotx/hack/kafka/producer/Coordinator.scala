@@ -5,10 +5,11 @@ import akka.event.Logging
 import com.spotx.hack.kafka.producer.domain.Visit
 
 object Coordinator {
-  def start(generator: ActorRef, printer: ActorRef) = Props(new Coordinator(generator, printer))
+  def start(generator: ActorRef, printer: ActorRef, producer: ActorRef) =
+    Props(new Coordinator(generator, printer, producer))
 }
 
-class Coordinator(generator: ActorRef, printer: ActorRef) extends Actor {
+class Coordinator(generator: ActorRef, printer: ActorRef, kafkaProducer: ActorRef) extends Actor {
   val log = Logging(context.system, this)
 
   def receive = {
@@ -23,6 +24,10 @@ class Coordinator(generator: ActorRef, printer: ActorRef) extends Actor {
     case x: List[Visit] => {
       log.info(s"Coordinator received a list of visits of length: ${x.size}")
       x.foreach(self ! _)
+    }
+    case (v: Visit, j: JsonVisitor) => {
+      log.info(s"Coordinator received a JsonVisitor: ${j.value}")
+      kafkaProducer ! (v, j)
     }
   }
 }
